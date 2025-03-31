@@ -41,6 +41,8 @@ async def main():
         related_df = pl.DataFrame()
         to_fetch_df = hashtag_df
 
+    num_since_save = 0
+
     pbar = tqdm()
     
     while len(to_fetch_df) > 0:
@@ -75,8 +77,11 @@ async def main():
                 to_fetch_df = to_fetch_df.filter(~pl.col('id').is_in(video_df.select('id')))
 
                 pbar.update(1)
-                video_df.write_parquet(video_path, compression='zstd')
-                related_df.write_parquet(related_path, compression='zstd')
+                num_since_save += len(related_videos)
+                if num_since_save > 10:
+                    video_df.write_parquet(video_path, compression='zstd')
+                    related_df.write_parquet(related_path, compression='zstd')
+                    num_since_save = 0
                 print(f"Number videos: {len(video_df)}, Number related videos: {len(related_df)}, Number to fetch: {len(to_fetch_df)}")
             except Exception as e:
                 print(e)
